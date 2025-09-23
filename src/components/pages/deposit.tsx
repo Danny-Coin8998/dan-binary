@@ -52,7 +52,11 @@ export default function DepositPage() {
 
       <Separator className="bg-[#989898] h-px mb-3 md:mb-5" />
 
-      <div className="dashboard-gradient rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-8 shadow-2xl">
+      <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold flex items-baseline gap-2 md:gap-4">
+        Coming Soon
+      </h1>
+
+      {/* <div className="dashboard-gradient rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-8 shadow-2xl">
         <div className="mb-6 md:mb-8">
           <div className="rounded-lg p-3 sm:p-4 mb-4 relative bg-white/71 shadow-[3px_0px_4px_0px_rgba(70,70,70,0.25)]">
             <div className="absolute -top-3 sm:-top-4 -left-2 sm:-left-3 w-10 h-10 sm:w-12 sm:h-12 overflow-hidden flex items-center justify-center">
@@ -162,7 +166,7 @@ export default function DepositPage() {
             Confirm Deposit
           </Button>
         </div>
-      </div>
+      </div> */}
     </>
   );
 }
