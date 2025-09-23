@@ -1,0 +1,222 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@radix-ui/react-separator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+import Withdraw from "@/images/icons/withdraw.png";
+import Wallet from "@/images/wallet.png";
+
+export default function WithdrawPage() {
+  const [walletAddress, setWalletAddress] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [wantDanToken, setWantDanToken] = useState(false);
+  const [danAmount, setDanAmount] = useState("");
+
+  const accountBalance = "19.70";
+  const pendingWithdrawals = "0.00";
+  const minWithdrawAmount = "1 USDT";
+  const withdrawalFee = "3%";
+  const danExchangeRate = "65.00 DAN/USDT";
+
+  const handleWithdraw = () => {
+    console.log("Withdraw submitted:", {
+      walletAddress,
+      withdrawAmount,
+      wantDanToken,
+      danAmount,
+    });
+  };
+
+  const handleAmountChange = (value: string) => {
+    setWithdrawAmount(value);
+    if (wantDanToken && value) {
+      const usdtAmount = parseFloat(value);
+      if (!isNaN(usdtAmount)) {
+        setDanAmount((usdtAmount * 65).toString());
+      }
+    }
+  };
+
+  const handleDanTokenToggle = (checked: boolean) => {
+    setWantDanToken(checked);
+    if (checked && withdrawAmount) {
+      const usdtAmount = parseFloat(withdrawAmount);
+      if (!isNaN(usdtAmount)) {
+        setDanAmount((usdtAmount * 65).toString());
+      }
+    } else {
+      setDanAmount("");
+    }
+  };
+
+  return (
+    <>
+      <div className="w-full space-y-4 sm:space-y-6 sm:px-4">
+        <div className="mb-3 sm:mb-4 md:mb-6">
+          <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold flex items-center gap-2 sm:gap-3 md:gap-4">
+            Withdraw fund
+            <Image
+              src={Withdraw}
+              alt="withdraw"
+              width={18}
+              height={18}
+              className="object-contain sm:w-[20px] sm:h-[20px] md:w-[24px] md:h-[24px] lg:w-[30px] lg:h-[30px]"
+            />
+          </h1>
+        </div>
+
+        <Separator className="bg-[#989898] h-px mb-3 sm:mb-4 md:mb-5" />
+        <div className="dashboard-gradient rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-12 shadow-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-10 mb-4 sm:mb-6 ">
+            <div
+              className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-center backdrop-blur-sm"
+              style={{
+                background: "#9058FE",
+                backdropFilter: "blur(20px)",
+                boxShadow: "0px 0px 15px 0px #9058FE",
+              }}
+            >
+              <h3 className="text-white text-lg sm:text-xl md:text-2xl font-semibold mb-1 sm:mb-2">
+                Account Balance
+              </h3>
+              <p className="text-white text-2xl sm:text-3xl md:text-4xl font-semibold">
+                {accountBalance}
+              </p>
+            </div>
+            <div
+              className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-center backdrop-blur-sm"
+              style={{
+                background: "#9058FE",
+                backdropFilter: "blur(20px)",
+                boxShadow: "0px 0px 15px 0px #9058FE",
+              }}
+            >
+              <h3 className="text-white text-lg sm:text-xl md:text-2xl font-semibold mb-1 sm:mb-2">
+                Pending Withdrawals
+              </h3>
+              <p className="text-white text-2xl sm:text-3xl md:text-4xl font-semibold">
+                {pendingWithdrawals}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-gray-300 rounded-lg overflow-hidden mb-4 sm:mb-6">
+            <div className="grid" style={{ gridTemplateColumns: "2fr 1fr" }}>
+              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
+                <span className="text-black font-medium text-sm sm:text-base">
+                  Minimum withdraw amount
+                </span>
+              </div>
+              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
+                <span className="text-[#555555] text-sm sm:text-base">
+                  {minWithdrawAmount}
+                </span>
+              </div>
+              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
+                <span className="text-black font-medium text-sm sm:text-base">
+                  Withdrawal fee/transaction
+                </span>
+              </div>
+              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
+                <span className="text-[#555555] text-sm sm:text-base">
+                  {withdrawalFee}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-300 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6">
+            <h2 className="text-gray-800 text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+              Withdraw fund
+              <Image
+                src={Wallet}
+                alt="Wallet"
+                width={16}
+                height={16}
+                className="object-contain sm:w-[20px] sm:h-[20px] md:w-[24px] md:h-[24px] lg:w-[30px] lg:h-[30px]"
+              />
+            </h2>
+            <Separator className="bg-[#989898] h-px mb-4 sm:mb-5" />
+
+            <div className="space-y-4 sm:space-y-6">
+              <div>
+                <label className="block text-gray-800 font-medium mb-2 sm:mb-3 text-sm sm:text-base">
+                  Withdraw to wallet address (USDT on Binance Smart Chain)
+                </label>
+                <Input
+                  type="text"
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  placeholder="Withdraw to wallet address (USDT on Binance Smart Chain)"
+                  className="bg-white border-none text-[#A7A7A7] text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-800 font-medium mb-2 sm:mb-3 text-sm sm:text-base">
+                  Withdrawal amount (USDT)
+                </label>
+                <Input
+                  type="text"
+                  value={withdrawAmount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  placeholder="Withdrawal amount (USDT)"
+                  className="bg-white border-none text-[#A7A7A7] text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="danToken"
+                    checked={wantDanToken}
+                    onCheckedChange={handleDanTokenToggle}
+                    className="w-4 h-4 sm:w-5 sm:h-5 bg-white data-[state=checked]:bg-[#9058FE] data-[state=checked]:border-[#9058FE] border-gray-300"
+                  />
+                  <label
+                    htmlFor="danToken"
+                    className="text-[#D83838] text-base sm:text-lg cursor-pointer"
+                  >
+                    I want to get DAN Token
+                  </label>
+                </div>
+                <p className="text-[#3B3B3B] text-sm sm:text-base md:text-lg ml-6 sm:ml-8">
+                  DAN Token exchange rate {danExchangeRate}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-gray-800 font-medium mb-2 sm:mb-3 text-sm sm:text-base">
+                  Withdrawal amount (DAN)
+                </label>
+                <Input
+                  type="number"
+                  value={danAmount}
+                  onChange={(e) => setDanAmount(e.target.value)}
+                  placeholder="Withdrawal amount (DAN)"
+                  disabled={!wantDanToken}
+                  className="bg-white border-none text-[#A7A7A7] text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
+                />
+              </div>
+
+              <div className="flex justify-end pt-3 sm:pt-4">
+                <Button
+                  onClick={handleWithdraw}
+                  disabled={!walletAddress || !withdrawAmount}
+                  size="lg"
+                  className="bg-[#9058FE] text-white py-3 px-6 sm:py-4 sm:px-8 md:py-5 md:px-10 text-sm sm:text-base md:text-lg lg:text-xl font-normal rounded-2xl sm:rounded-3xl border-0 shadow-lg w-full sm:w-auto cursor-pointer h-12 sm:h-14 md:h-16"
+                >
+                  Withdraw
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
