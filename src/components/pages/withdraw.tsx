@@ -70,7 +70,12 @@ export default function WithdrawPage() {
         </div>
 
         <Separator className="bg-[#989898] h-px mb-3 sm:mb-4 md:mb-5" />
-        <div className="dashboard-gradient rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-12 shadow-2xl">
+
+        <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold flex items-baseline gap-2 md:gap-4">
+          Coming Soon
+        </h1>
+
+        {/* <div className="dashboard-gradient rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-12 shadow-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-10 mb-4 sm:mb-6 ">
             <div
               className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-center backdrop-blur-sm"
@@ -215,7 +220,7 @@ export default function WithdrawPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </>
   );
