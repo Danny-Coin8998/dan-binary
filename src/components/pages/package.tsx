@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@radix-ui/react-separator";
+import Swal from "sweetalert2";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import PackageIcon from "@/images/icons/package.png";
@@ -74,12 +75,40 @@ export default function PackagePage() {
     );
 
     if (!selectedPkg) {
-      alert("Please select a package");
+      Swal.fire({
+        icon: "warning",
+        title: "No Package Selected",
+        text: "Please select a package to invest in",
+        confirmButtonColor: "#9058FE",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (!selectedPkg.can_afford) {
-      alert("Insufficient balance to buy this package");
+      Swal.fire({
+        icon: "error",
+        title: "Insufficient Balance",
+        text: "You do not have enough balance to buy this package",
+        confirmButtonColor: "#9058FE",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
+    // Show confirmation dialog
+    const result = await Swal.fire({
+      title: "Confirm Investment",
+      text: `Are you sure you want to invest in ${selectedPkg.p_name}?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#9058FE",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, invest!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -87,13 +116,31 @@ export default function PackagePage() {
       await purchasePackage(selectedPackage);
 
       if (!error) {
-        alert(`Successfully purchased package: ${selectedPkg.p_name}`);
+        Swal.fire({
+          icon: "success",
+          title: "Investment Successful!",
+          text: `You have successfully purchased package: ${selectedPkg.p_name}`,
+          confirmButtonColor: "#9058FE",
+          confirmButtonText: "Great!",
+        });
       } else {
-        alert(`Failed to buy package: ${error}`);
+        Swal.fire({
+          icon: "error",
+          title: "Investment Failed",
+          text: error,
+          confirmButtonColor: "#9058FE",
+          confirmButtonText: "OK",
+        });
       }
     } catch (error) {
       console.error("Error buying package:", error);
-      alert("An error occurred while buying the package");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while buying the package",
+        confirmButtonColor: "#9058FE",
+        confirmButtonText: "OK",
+      });
     }
   };
 
