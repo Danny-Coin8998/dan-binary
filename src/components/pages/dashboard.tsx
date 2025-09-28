@@ -193,7 +193,7 @@ export default function Dashboard() {
             <div className="flex flex-col lg:flex-row justify-center lg:justify-between gap-4">
               <MetricCard
                 label="Total Deposits"
-                value={balances.total_deposit.toFixed(2)}
+                value={balances.total_deposit}
               />
               <MetricCard
                 label="Total Withdrawals"
