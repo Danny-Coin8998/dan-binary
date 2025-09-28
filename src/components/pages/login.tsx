@@ -73,7 +73,7 @@ export default function LoginPage() {
       <div className="relative z-10 flex flex-col items-center w-full max-w-lg">
         <div className="flex items-center justify-center mb-8">
           <Image
-            src={LogoImg}
+            src="/dan-logo.png"
             alt="DAN Binary Logo"
             width={200}
             height={80}

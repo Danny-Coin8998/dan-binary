@@ -82,12 +82,17 @@ interface PackageStore {
   selectedPackage: number;
   selectedAccount: string;
   currentIndex: number;
+  buyingPackage: boolean;
 
   // API Methods
   getPackages: () => Promise<ApiResponse<PackageApiResponse["data"]>>;
+  buyPackage: (
+    packageId: number
+  ) => Promise<ApiResponse<{ message?: string; success?: boolean }>>;
 
   // Actions
   fetchPackages: () => Promise<void>;
+  purchasePackage: (packageId: number) => Promise<void>;
   setSelectedPackage: (packageId: number) => void;
   setSelectedAccount: (accountId: string) => void;
   setCurrentIndex: (index: number) => void;
@@ -107,6 +112,7 @@ export const usePackageStore = create<PackageStore>((set, get) => ({
   selectedPackage: 1,
   selectedAccount: "account-balance",
   currentIndex: 0,
+  buyingPackage: false,
 
   // API Methods
   getPackages: async () => {
@@ -119,6 +125,20 @@ export const usePackageStore = create<PackageStore>((set, get) => ({
         return {
           success: false,
           error: error?.response?.data?.error || "Failed to fetch packages",
+        };
+      });
+  },
+
+  buyPackage: async (packageId: number) => {
+    return apiClient
+      .post("/buy-package", { p_id: packageId })
+      .then((response) => {
+        return { success: true, data: response.data };
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error?.response?.data?.error || "Failed to buy package",
         };
       });
   },
@@ -177,6 +197,21 @@ export const usePackageStore = create<PackageStore>((set, get) => ({
     if (currentIndex < packages.length - 3) {
       set({ currentIndex: currentIndex + 1 });
     }
+  },
+
+  purchasePackage: async (packageId: number) => {
+    set({ buyingPackage: true, error: null });
+
+    const result = await get().buyPackage(packageId);
+
+    if (result.success) {
+      // Refresh packages to update user balance and package availability
+      await get().fetchPackages();
+    } else {
+      set({ error: result.error || "Failed to purchase package" });
+    }
+
+    set({ buyingPackage: false });
   },
 
   clearError: () => set({ error: null }),

@@ -51,7 +51,9 @@ export default function PackagePage() {
     selectedPackage,
     selectedAccount,
     currentIndex,
+    buyingPackage,
     fetchPackages,
+    purchasePackage,
     setSelectedPackage,
     setSelectedAccount,
     handlePrevious,
@@ -66,12 +68,32 @@ export default function PackagePage() {
     setSelectedAccount(accountId);
   };
 
-  const handleInvest = () => {
+  const handleInvest = async () => {
     const selectedPkg = packages.find(
       (pkg: PackageItem) => pkg.p_id === selectedPackage
     );
-    if (selectedPkg) {
-      alert(`Investing ${selectedPkg.p_amount} USDT`);
+
+    if (!selectedPkg) {
+      alert("Please select a package");
+      return;
+    }
+
+    if (!selectedPkg.can_afford) {
+      alert("Insufficient balance to buy this package");
+      return;
+    }
+
+    try {
+      await purchasePackage(selectedPackage);
+
+      if (!error) {
+        alert(`Successfully purchased package: ${selectedPkg.p_name}`);
+      } else {
+        alert(`Failed to buy package: ${error}`);
+      }
+    } catch (error) {
+      console.error("Error buying package:", error);
+      alert("An error occurred while buying the package");
     }
   };
 
@@ -354,14 +376,15 @@ export default function PackagePage() {
             disabled={
               !packages ||
               !packages.find((pkg: PackageItem) => pkg.p_id === selectedPackage)
-                ?.can_afford
+                ?.can_afford ||
+              buyingPackage
             }
             className="bg-[#9058FE] text-white px-8 sm:px-12 py-3 sm:py-4 text-lg sm:text-xl font-medium rounded-2xl border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-500"
             style={{
               boxShadow: "3px 0px 4px 0px #00000040",
             }}
           >
-            Invest
+            {buyingPackage ? "Processing..." : "Invest"}
           </Button>
         </div>
       </div>
