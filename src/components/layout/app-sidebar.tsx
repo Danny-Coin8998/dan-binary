@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Logo from "@/images/DAN Binary Logo.png";
 import { ChevronsUpDown, Menu, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -90,11 +89,11 @@ export function AppSidebar({ className }: AppSidebarProps) {
         <div className="flex h-30 items-center px-4">
           <div className="flex items-center space-x-10">
             <Image
-              src={Logo}
+              src="/dan-logo.png"
               alt="DAN BINARY Logo"
               width={140}
               height={75}
-              className="object-contain"
+              className="object-contain w-1/2 h-auto mx-auto"
             />
             <ChevronsUpDown className="h-4 w-4 text-white ml-4" />
           </div>
