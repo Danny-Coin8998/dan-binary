@@ -14,62 +14,69 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { depositService } from "@/services/depositService";
+import { useDeposit } from "@/store/deposit";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
 import MoneyIcon from "@/images/icons/money.png";
 
-const walletAddress = "0x27D5C0d55e0c96e875a7f5a7A364f7805283D046";
-
 export default function DepositPage() {
   const [depositAmount, setDepositAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [depositStatus, setDepositStatus] = useState<{
-    type: 'success' | 'error' | null;
+    type: "success" | "error" | null;
     message: string;
-  }>({ type: null, message: '' });
+  }>({ type: null, message: "" });
+
+  const { isLoading, clearError } = useDeposit();
 
   const handleDeposit = async () => {
     if (!depositAmount) {
-      setDepositStatus({ type: 'error', message: 'Please enter deposit amount' });
+      setDepositStatus({
+        type: "error",
+        message: "Please enter deposit amount",
+      });
       return;
     }
 
     const amount = parseFloat(depositAmount);
     if (isNaN(amount) || amount <= 0) {
-      setDepositStatus({ type: 'error', message: 'Please enter a valid amount' });
+      setDepositStatus({
+        type: "error",
+        message: "Please enter a valid amount",
+      });
       return;
     }
 
-    setIsLoading(true);
-    setDepositStatus({ type: null, message: '' });
+    clearError();
+    setDepositStatus({ type: null, message: "" });
 
     try {
       // Get user's wallet address
       const userAddress = await depositService.getUserAddress();
-      
+
       // Process the deposit (transfer tokens + API call)
       const result = await depositService.processDeposit(amount, userAddress);
 
       if (result.success) {
-        setDepositStatus({ 
-          type: 'success', 
-          message: `Deposit successful! Transaction: ${result.transactionHash}` 
+        setDepositStatus({
+          type: "success",
+          message: `Deposit successful! Transaction: ${result.transactionHash}`,
         });
         setDepositAmount(""); // Clear the input
       } else {
-        setDepositStatus({ 
-          type: 'error', 
-          message: result.error || 'Deposit failed' 
+        setDepositStatus({
+          type: "error",
+          message: result.error || "Deposit failed",
         });
       }
     } catch (error) {
       console.error("Deposit error:", error);
-      setDepositStatus({ 
-        type: 'error', 
-        message: error instanceof Error ? error.message : 'An unexpected error occurred' 
+      setDepositStatus({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -117,16 +124,43 @@ export default function DepositPage() {
                 placeholder="0.00"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                className="bg-black/20 border-white/20 text-white pl-12 text-lg focus:ring-2 focus:ring-offset-0 focus:ring-purple-500 transition-shadow duration-300"
+                disabled={isLoading}
+                className="bg-black/20 border-white/20 text-white pl-12 text-lg focus:ring-2 focus:ring-offset-0 focus:ring-purple-500 transition-shadow duration-300 disabled:opacity-50"
               />
             </div>
+
+            {/* Status Messages */}
+            {depositStatus.type && (
+              <div
+                className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${
+                  depositStatus.type === "success"
+                    ? "bg-green-500/20 border border-green-500/30 text-green-300"
+                    : "bg-red-500/20 border border-red-500/30 text-red-300"
+                }`}
+              >
+                {depositStatus.type === "success" ? (
+                  <CheckCircle className="w-5 h-5" />
+                ) : (
+                  <XCircle className="w-5 h-5" />
+                )}
+                <span className="text-sm">{depositStatus.message}</span>
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Button
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
               onClick={handleDeposit}
+              disabled={isLoading || !depositAmount}
             >
-              Confirm Deposit
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing Deposit...
+                </>
+              ) : (
+                "Confirm Deposit"
+              )}
             </Button>
           </CardFooter>
         </Card>
