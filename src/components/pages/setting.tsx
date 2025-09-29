@@ -1,32 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Separator } from "@radix-ui/react-separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Mail } from "lucide-react";
+import { User } from "lucide-react";
 
 import Setting from "@/images/icons/setting.png";
 import Avatar from "@/images/icons/avatar.png";
+import { useProfileStore } from "@/store/profile";
 
 export default function SettingPage() {
+  const {
+    profile,
+    loading,
+    updating,
+    error,
+    fetchProfile,
+    updateProfileData,
+    clearError,
+  } = useProfileStore();
+
   const [personalInfo, setPersonalInfo] = useState({
-    fullName: "Somchai Jaidee",
-    email: "somchai888@gmail.com",
+    firstname: "",
+    lastname: "",
   });
 
-  const [passwordInfo, setPasswordInfo] = useState({
-    newPassword: "",
-    retypePassword: "",
-  });
+  // Fetch profile data on component mount
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
-  const handlePersonalInfoUpdate = () => {
-    console.log("Updating personal info:", personalInfo);
-  };
+  // Update local state when profile data changes
+  useEffect(() => {
+    if (profile.firstname || profile.lastname) {
+      setPersonalInfo({
+        firstname: profile.firstname,
+        lastname: profile.lastname,
+      });
+    }
+  }, [profile]);
 
-  const handlePasswordUpdate = () => {
-    console.log("Updating password");
+  const handlePersonalInfoUpdate = async () => {
+    if (personalInfo.firstname.trim() && personalInfo.lastname.trim()) {
+      await updateProfileData(
+        personalInfo.firstname.trim(),
+        personalInfo.lastname.trim()
+      );
+    }
   };
 
   return (
@@ -46,6 +68,21 @@ export default function SettingPage() {
 
       <Separator className="bg-[#989898] h-px mb-4 sm:mb-6 md:mb-8" />
 
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span>{error}</span>
+            <button
+              onClick={clearError}
+              className="text-red-500 hover:text-red-700 font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Container - ทุกอย่างอยู่ในกรอบเดียว */}
       <div className="dashboard-gradient rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 shadow-2xl">
         {/* Avatar Section - อยู่ด้านบนซ้ายของกรอบ */}
@@ -61,10 +98,13 @@ export default function SettingPage() {
           </div>
           <div className="text-white">
             <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold mb-1">
-              {personalInfo.fullName}
+              {loading
+                ? "Loading..."
+                : `${personalInfo.firstname} ${personalInfo.lastname}`.trim() ||
+                  "No Name"}
             </h2>
             <p className="text-gray-300 text-sm sm:text-base md:text-lg lg:text-xl">
-              {personalInfo.email}
+              {loading ? "Loading..." : profile.username || "No Email"}
             </p>
           </div>
         </div>
@@ -79,20 +119,23 @@ export default function SettingPage() {
             <div className="space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8">
               <div>
                 <label className="block text-[#222222] text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
-                  Full Name
+                  First Name
                 </label>
                 <div className="relative">
                   <Input
                     type="text"
-                    value={personalInfo.fullName}
+                    value={personalInfo.firstname}
                     onChange={(e) =>
                       setPersonalInfo({
                         ...personalInfo,
-                        fullName: e.target.value,
+                        firstname: e.target.value,
                       })
                     }
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2 md:py-3 bg-white/54 border border-[#696969] rounded-full text-[#454545] text-sm sm:text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent pl-8 sm:pl-9 md:pl-10"
-                    placeholder="Enter your full name"
+                    disabled={loading || updating}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2 md:py-3 bg-white/54 border border-[#696969] rounded-full text-[#454545] text-sm sm:text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent pl-8 sm:pl-9 md:pl-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder={
+                      loading ? "Loading..." : "Enter your first name"
+                    }
                   />
                   <User className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-400" />
                 </div>
@@ -100,38 +143,47 @@ export default function SettingPage() {
 
               <div>
                 <label className="block text-[#222222] text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
-                  Email Address
+                  Last Name
                 </label>
                 <div className="relative">
                   <Input
-                    type="email"
-                    value={personalInfo.email}
+                    type="text"
+                    value={personalInfo.lastname}
                     onChange={(e) =>
                       setPersonalInfo({
                         ...personalInfo,
-                        email: e.target.value,
+                        lastname: e.target.value,
                       })
                     }
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2 md:py-3 bg-white/54 border border-[#696969] rounded-full text-[#454545] text-sm sm:text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent pl-8 sm:pl-9 md:pl-10"
-                    placeholder="Enter your email"
+                    disabled={loading || updating}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2 md:py-3 bg-white/54 border border-[#696969] rounded-full text-[#454545] text-sm sm:text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent pl-8 sm:pl-9 md:pl-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder={
+                      loading ? "Loading..." : "Enter your last name"
+                    }
                   />
-                  <Mail className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-400" />
+                  <User className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-400" />
                 </div>
               </div>
 
               <div className="flex justify-center pt-2 sm:pt-3 md:pt-4">
                 <Button
                   onClick={handlePersonalInfoUpdate}
-                  className="w-24 sm:w-28 md:w-32 bg-[#9058FE] text-white py-2 sm:py-2 md:py-3 px-3 sm:px-4 md:px-6 rounded-full font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-xs sm:text-sm md:text-base cursor-pointer"
+                  disabled={
+                    loading ||
+                    updating ||
+                    !personalInfo.firstname.trim() ||
+                    !personalInfo.lastname.trim()
+                  }
+                  className="w-24 sm:w-28 md:w-32 bg-[#9058FE] text-white py-2 sm:py-2 md:py-3 px-3 sm:px-4 md:px-6 rounded-full font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-xs sm:text-sm md:text-base cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  Update
+                  {updating ? "Updating..." : "Update"}
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Change Password */}
-          <div className="bg-white/73 rounded-xl sm:rounded-2xl md:rounded-3xl lg:rounded-4xl p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 w-full max-w-xs sm:max-w-sm md:max-w-md">
+          {/* <div className="bg-white/73 rounded-xl sm:rounded-2xl md:rounded-3xl lg:rounded-4xl p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 w-full max-w-xs sm:max-w-sm md:max-w-md">
             <h3 className="text-[#3C01AF] text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 sm:mb-5 md:mb-6 lg:mb-8">
               Change password
             </h3>
@@ -182,7 +234,7 @@ export default function SettingPage() {
                 </Button>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Registration Date - อยู่ด้านล่างของกรอบ */}
