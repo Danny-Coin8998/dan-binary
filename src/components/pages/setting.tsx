@@ -48,7 +48,6 @@ export default function SettingPage() {
 
       {/* Main Container - ทุกอย่างอยู่ในกรอบเดียว */}
       <div className="dashboard-gradient rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 shadow-2xl">
-        
         {/* Avatar Section - อยู่ด้านบนซ้ายของกรอบ */}
         <div className="flex items-center mb-8 sm:mb-10 md:mb-12">
           <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 xl:w-36 xl:h-36 rounded-full border-2 md:border-3 lg:border-4 border-blue-200 bg-white p-1 shadow-lg mr-4 sm:mr-6">
@@ -72,7 +71,6 @@ export default function SettingPage() {
 
         {/* Forms Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12 xl:gap-16 justify-items-center max-w-6xl mx-auto mb-6 sm:mb-8">
-          
           {/* Personal Information */}
           <div className="bg-white/73 rounded-xl sm:rounded-2xl md:rounded-3xl lg:rounded-4xl p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 w-full max-w-xs sm:max-w-sm md:max-w-md">
             <h3 className="text-[#3C01AF] text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 sm:mb-5 md:mb-6 lg:mb-8">
@@ -188,9 +186,9 @@ export default function SettingPage() {
         </div>
 
         {/* Registration Date - อยู่ด้านล่างของกรอบ */}
-        <div className="text-center text-[#B1B1B1] text-xs sm:text-sm md:text-base lg:text-lg border-t border-gray-300/20 pt-4 sm:pt-6">
+        {/* <div className="text-center text-[#B1B1B1] text-xs sm:text-sm md:text-base lg:text-lg border-t border-gray-300/20 pt-4 sm:pt-6">
           Registration Date : 2025-04-18 10:11:47
-        </div>
+        </div> */}
       </div>
     </>
   );
