@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { alata, afacad } from "@/lib/fonts";
 import "./globals.css";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { ConditionalLayout } from "@/components/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: "Dan binary",
@@ -20,9 +19,7 @@ export default function RootLayout({
         className={`${alata.variable} ${afacad.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <ProtectedRoute>
-          <DashboardLayout>{children}</DashboardLayout>
-        </ProtectedRoute>
+        <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>
   );
