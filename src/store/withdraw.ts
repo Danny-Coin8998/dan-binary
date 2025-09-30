@@ -53,6 +53,11 @@ interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+interface WithdrawData {
+  dan_amount: number;
+  txn_hash: string;
+}
+
 interface WithdrawStore {
   // State
   balance: BalanceData | null;
@@ -61,6 +66,9 @@ interface WithdrawStore {
 
   // API Methods
   getBalance: () => Promise<ApiResponse<BalanceData>>;
+  submitWithdraw: (
+    data: WithdrawData
+  ) => Promise<ApiResponse<{ message: string }>>;
 
   // Actions
   fetchBalance: () => Promise<void>;
@@ -84,6 +92,20 @@ export const useWithdrawStore = create<WithdrawStore>((set, get) => ({
         return {
           success: false,
           error: error?.response?.data?.error || "Failed to fetch balance",
+        };
+      });
+  },
+
+  submitWithdraw: async (data: WithdrawData) => {
+    return apiClient
+      .post("/withdraw", data)
+      .then((response) => {
+        return { success: true, data: response.data };
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error?.response?.data?.error || "Failed to submit withdrawal",
         };
       });
   },
