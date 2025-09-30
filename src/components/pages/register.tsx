@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRegister } from "@/store/register";
 import BG from "@/images/Background.png";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
@@ -250,5 +250,32 @@ export default function RegisterPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+          <div className="absolute inset-0">
+            <Image
+              src={BG}
+              alt="Background"
+              fill
+              className="object-cover"
+              priority
+              quality={100}
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#7C27BF] to-[#263450] mix-blend-hue" />
+          </div>
+          <div className="relative z-10 flex items-center justify-center">
+            <div className="text-white text-xl">Loading...</div>
+          </div>
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }
