@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@radix-ui/react-separator";
@@ -61,9 +61,33 @@ export default function PackagePage() {
     handleNext,
   } = usePackage();
 
+  // Track number of cards to show based on screen size
+  const [cardsToShow, setCardsToShow] = useState(3);
+
   useEffect(() => {
     fetchPackages();
   }, [fetchPackages]);
+
+  // Handle responsive card count
+  useEffect(() => {
+    const handleResize = () => {
+      // Show 1 card on mobile (< 768px), 3 cards on larger screens
+      if (window.innerWidth < 768) {
+        setCardsToShow(1);
+      } else {
+        setCardsToShow(3);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add event listener
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleAccountSelect = (accountId: string) => {
     setSelectedAccount(accountId);
@@ -288,7 +312,7 @@ export default function PackagePage() {
             <div className="flex gap-3 sm:gap-5 md:gap-6 flex-1 justify-center max-w-2xl sm:max-w-3xl md:max-w-5xl">
               {packages && packages.length > 0 ? (
                 packages
-                  .slice(currentIndex, currentIndex + 3)
+                  .slice(currentIndex, currentIndex + cardsToShow)
                   .map((pkg: PackageItem) => {
                     const colors = getPackageColors(
                       pkg.p_amount,
@@ -322,7 +346,11 @@ export default function PackagePage() {
                             <div
                               className={`${colors.amountColor} text-lg sm:text-xl md:text-4xl font-bold mb-1 sm:mb-2`}
                             >
-                              {pkg.p_name}
+                              {pkg.required_dan.toFixed(2)} DAN
+                              {/* {pkg.p_name} */}
+                            </div>
+                            <div className="text-gray-400 text-xs sm:text-sm md:text-lg opacity-80">
+                              ({pkg.p_name})
                             </div>
                             <div
                               className={`${colors.textColor} text-xs sm:text-sm md:text-lg opacity-80`}
@@ -362,7 +390,9 @@ export default function PackagePage() {
 
             <Button
               onClick={handleNext}
-              disabled={!packages || currentIndex >= packages.length - 3}
+              disabled={
+                !packages || currentIndex >= packages.length - cardsToShow
+              }
               className="bg-white/80 hover:bg-white/30 text-white border-none p-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 w-[60px] h-[60px] flex items-center justify-center cursor-pointer"
             >
               <ChevronRight style={{ width: "35px", height: "35px" }} />
