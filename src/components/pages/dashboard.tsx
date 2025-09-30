@@ -192,6 +192,12 @@ export default function Dashboard() {
           <div className="space-y-4 md:space-y-6 lg:space-y-8">
             <div className="flex flex-col lg:flex-row justify-center lg:justify-between gap-4">
               <MetricCard
+                label="Total Received Commission"
+                value={parseFloat(balances.total_earned).toFixed(2)}
+              />
+            </div>
+            <div className="flex flex-col lg:flex-row justify-center lg:justify-between gap-4">
+              <MetricCard
                 label="Total Deposits"
                 value={balances.total_deposit}
               />
