@@ -328,7 +328,7 @@ export default function PackagePage() {
                           }
                           className={`${
                             colors.bgColor
-                          } rounded-2xl p-5 sm:p-6 md:p-8 transition-all duration-300 min-w-[110px] sm:min-w-[150px] md:min-w-[180px] flex-1 max-w-[150px] sm:max-w-[180px] md:max-w-[250px] relative overflow-hidden border-6 h-32 sm:h-36 md:h-40 ${
+                          } rounded-2xl p-5 sm:p-6 md:p-8 transition-all duration-300 min-w-[110px] sm:min-w-[150px] md:min-w-[180px] flex-1 max-w-[150px] sm:max-w-[180px] md:max-w-[250px] relative overflow-hidden border-6 h-[180px] sm:h-[200px] md:h-[220px] flex flex-col justify-center ${
                             isSelected ? "shadow-lg scale-105 pb-8" : ""
                           } ${
                             pkg.can_afford
@@ -342,9 +342,9 @@ export default function PackagePage() {
                           }}
                         >
                           {/* Content */}
-                          <div className="text-center">
+                          <div className="text-center my-auto">
                             <div
-                              className={`${colors.amountColor} text-lg sm:text-xl md:text-4xl font-bold mb-1 sm:mb-2`}
+                              className={`${colors.amountColor} text-md sm:text-xl md:text-3xl font-bold mb-1 sm:mb-2`}
                             >
                               {pkg.required_dan.toFixed(2)} DAN
                               {/* {pkg.p_name} */}
