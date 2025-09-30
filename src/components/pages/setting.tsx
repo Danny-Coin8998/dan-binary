@@ -104,7 +104,10 @@ export default function SettingPage() {
                   "No Name"}
             </h2>
             <p className="text-gray-300 text-sm sm:text-base md:text-lg lg:text-xl">
-              {loading ? "Loading..." : profile.username || "No Email"}
+              Wallet Address :{" "}
+              {loading
+                ? "Loading..."
+                : profile.wallet_address || "No Wallet Address"}
             </p>
           </div>
         </div>
