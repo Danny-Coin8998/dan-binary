@@ -1,5 +1,24 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment Setup
+
+Before running the application, you need to set up the following environment variables in your `.env.local` file:
+
+```bash
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+
+# Blockchain Configuration for Withdrawals
+NEXT_PUBLIC_PAYMENT_WALLET_PRIVATE_KEY=your_payment_wallet_private_key_here
+NEXT_PUBLIC_DAN_TOKEN_ADDRESS=your_dan_token_contract_address_here
+NEXT_PUBLIC_BSC_RPC_URL=https://bsc-dataseed.binance.org/
+```
+
+**Important Notes:**
+- `NEXT_PUBLIC_PAYMENT_WALLET_PRIVATE_KEY`: The private key of the wallet that holds DAN tokens for withdrawals
+- `NEXT_PUBLIC_DAN_TOKEN_ADDRESS`: The contract address of the DAN token on Binance Smart Chain
+- `NEXT_PUBLIC_BSC_RPC_URL`: RPC endpoint for Binance Smart Chain (default provided)
+
 ## Getting Started
 
 First, run the development server:

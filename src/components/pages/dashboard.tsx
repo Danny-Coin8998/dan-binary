@@ -172,7 +172,7 @@ export default function Dashboard() {
                 }
               />
               <StatCard
-                title="Total APR"
+                title="Total Income"
                 value={`${balances.earned_percentage.toFixed(2)}%`}
                 className="sm:col-span-2 lg:col-span-1"
                 icon={
@@ -192,6 +192,12 @@ export default function Dashboard() {
           <div className="space-y-4 md:space-y-6 lg:space-y-8">
             <div className="flex flex-col lg:flex-row justify-center lg:justify-between gap-4">
               <MetricCard
+                label="Total Earned"
+                value={parseFloat(balances.total_earned).toFixed(2)}
+              />
+            </div>
+            <div className="flex flex-col lg:flex-row justify-center lg:justify-between gap-4">
+              <MetricCard
                 label="Total Deposits"
                 value={balances.total_deposit}
               />
@@ -206,7 +212,7 @@ export default function Dashboard() {
                 value={parseFloat(balances.total_investment).toFixed(2)}
               />
               <MetricCard
-                label="Total Received Commission"
+                label="Total Referral Commission"
                 value={parseFloat(balances.total_commission).toFixed(2)}
               />
             </div>

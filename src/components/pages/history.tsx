@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import { Separator } from "@radix-ui/react-separator";
 import { ChevronRight } from "lucide-react";
@@ -13,35 +13,17 @@ import {
 } from "@/components/ui/select";
 
 import History from "@/images/icons/history.png";
-import historyConfig from "@/data/history.json";
 import { Button } from "../ui/button";
+import { useHistoryStore } from "@/store/history";
+
+// Import Transaction type from the store
+type Transaction = Parameters<
+  Parameters<typeof useHistoryStore>[0]
+>[0]["transactions"][0];
 
 interface HistoryOption {
   value: string;
   label: string;
-}
-
-interface HistoryDataItem {
-  id: number;
-  date: string;
-  amount: string;
-  fee: string;
-  receive: string;
-  withdrawTo: string;
-  status:
-    | "COMPLETED"
-    | "PENDING"
-    | "CANCELLED"
-    | "PROCESSING"
-    | "APPROVED"
-    | "REJECTED";
-}
-
-interface HistoryConfig {
-  historyOptions: HistoryOption[];
-  historyData: {
-    [key: string]: HistoryDataItem[];
-  };
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -51,6 +33,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     switch (statusUpper) {
       case "COMPLETED":
       case "SUCCESS":
+      case "APPROVED":
         return "text-green-400";
       case "PENDING":
       case "PROCESSING":
@@ -59,8 +42,6 @@ const StatusBadge = ({ status }: { status: string }) => {
       case "FAILED":
       case "REJECTED":
         return "text-red-400";
-      case "APPROVED":
-        return "text-blue-400";
       default:
         return "text-gray-400";
     }
@@ -77,31 +58,40 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-type HistoryData = HistoryDataItem;
-
-const { historyOptions, historyData } = historyConfig as HistoryConfig;
+// History filter options
+const historyOptions: HistoryOption[] = [
+  { value: "all", label: "All Transactions" },
+  { value: "deposit", label: "Deposits" },
+  { value: "invest", label: "Investments" },
+  { value: "apr", label: "APR" },
+  { value: "referral apr", label: "Referral APR" },
+];
 
 const getTableHeaders = () => {
-  return [
-    "Date",
-    "Amount(USDT)",
-    "Fee(USDT)",
-    "Receive(USDT)",
-    "Withdraw To",
-    "Status",
-  ];
+  return ["Date", "Type", "Amount", "Coin", "Status", "Details"];
 };
 
 export default function HistoryPage() {
-  const [selectedHistory, setSelectedHistory] = useState("default");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 10;
+  const {
+    loading,
+    error,
+    selectedType,
+    currentPage,
+    fetchHistory,
+    setSelectedType,
+    setCurrentPage,
+    getPaginatedTransactions,
+    getTotalPages,
+    clearError,
+  } = useHistoryStore();
 
-  const currentHistoryData = historyData[selectedHistory] || [];
-  const totalPages = Math.ceil(currentHistoryData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = currentHistoryData.slice(startIndex, endIndex);
+  const currentData = getPaginatedTransactions();
+  const totalPages = getTotalPages();
+
+  // Fetch history data on component mount
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const getPageNumbers = (): number[] => {
     const pages: number[] = [];
@@ -135,13 +125,12 @@ export default function HistoryPage() {
     }
   };
 
-  const handleRowClick = (row: HistoryData): void => {
-    console.log("Row clicked:", row);
+  const handleRowClick = (transaction: Transaction): void => {
+    console.log("Transaction clicked:", transaction);
   };
 
   const handleHistoryChange = (value: string) => {
-    setSelectedHistory(value);
-    setCurrentPage(1);
+    setSelectedType(value);
   };
 
   return (
@@ -164,9 +153,24 @@ export default function HistoryPage() {
 
         <Separator className="bg-[#989898] h-px mb-2 sm:mb-3 md:mb-5" />
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span>{error}</span>
+              <button
+                onClick={clearError}
+                className="text-red-500 hover:text-red-700 font-bold"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* History Type */}
         <div className="flex justify-center items-center mb-6">
-          <Select value={selectedHistory} onValueChange={handleHistoryChange}>
+          <Select value={selectedType} onValueChange={handleHistoryChange}>
             <SelectTrigger className="w-full max-w-md bg-white text-[#9058FE] cursor-pointer">
               <SelectValue placeholder="Select History" />
             </SelectTrigger>
@@ -185,61 +189,64 @@ export default function HistoryPage() {
         </div>
 
         {/* Table */}
-        {selectedHistory !== "default" && currentHistoryData.length > 0 && (
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="text-white text-lg">Loading transactions...</div>
+          </div>
+        ) : currentData.length > 0 ? (
           <div className="w-full space-y-3 sm:space-y-4">
             <div className="block lg:hidden space-y-3">
-              {currentData.map((row, index) => (
-                <div
-                  key={`${selectedHistory}-${row.id}-${index}`}
-                  className="rounded-xl border border-slate-700/50 backdrop-blur-sm shadow-lg p-4 cursor-pointer"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, #343967 0%, #263450 100%)",
-                  }}
-                  onClick={() => handleRowClick(row)}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="text-white text-sm font-medium">
-                        {row.date.split(" ")[0]}
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        {row.date.split(" ")[1]}
-                      </div>
-                    </div>
-                    <StatusBadge status={row.status} />
-                  </div>
+              {currentData.map((transaction, index) => {
+                const date = new Date(transaction.created_datetime);
+                const formattedDate = date.toLocaleDateString();
+                const formattedTime = date.toLocaleTimeString();
 
-                  <div className="space-y-2 mb-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-300 text-xs">Amount:</span>
-                      <span className="text-white text-sm font-medium">
-                        {row.amount} USDT
-                      </span>
+                return (
+                  <div
+                    key={`${transaction.t_id}-${index}`}
+                    className="rounded-xl border border-slate-700/50 backdrop-blur-sm shadow-lg p-4 cursor-pointer"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, #343967 0%, #263450 100%)",
+                    }}
+                    onClick={() => handleRowClick(transaction)}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="text-white text-sm font-medium">
+                          {formattedDate}
+                        </div>
+                        <div className="text-gray-400 text-xs">
+                          {formattedTime}
+                        </div>
+                      </div>
+                      <StatusBadge status={transaction.admin_status} />
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-300 text-xs">Fee:</span>
-                      <span className="text-white text-sm font-medium">
-                        {row.fee} USDT
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-300 text-xs">Receive:</span>
-                      <span className="text-white text-sm font-medium">
-                        {row.receive} USDT
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-300 text-xs">
-                        Withdraw To:
-                      </span>
-                      <span className="text-white text-sm text-right flex-1 ml-2 truncate">
-                        {row.withdrawTo}
-                      </span>
+
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-300 text-xs">Type:</span>
+                        <span className="text-white text-sm font-medium">
+                          {transaction.tran_type}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300 text-xs">Amount:</span>
+                        <span className="text-white text-sm font-medium">
+                          {transaction.in_amount || transaction.out_amount}{" "}
+                          {transaction.coin_name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300 text-xs">Details:</span>
+                        <span className="text-white text-sm text-right flex-1 ml-2 truncate">
+                          {transaction.detail}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {totalPages > 1 && (
                 <div
                   className="rounded-xl border border-slate-700/50 backdrop-blur-sm shadow-lg p-4"
@@ -300,47 +307,54 @@ export default function HistoryPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentData.map((row, index) => (
-                        <tr
-                          key={`${selectedHistory}-${row.id}-${index}`}
-                          className="hover:bg-slate-700/20 cursor-pointer transition-colors relative"
-                          onClick={() => handleRowClick(row)}
-                        >
-                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6">
-                            <div className="space-y-1">
-                              <div className="text-white text-sm lg:text-base">
-                                {row.date.split(" ")[0]}
+                      {currentData.map((transaction, index) => {
+                        const date = new Date(transaction.created_datetime);
+                        const formattedDate = date.toLocaleDateString();
+                        const formattedTime = date.toLocaleTimeString();
+
+                        return (
+                          <tr
+                            key={`${transaction.t_id}-${index}`}
+                            className="hover:bg-slate-700/20 cursor-pointer transition-colors relative"
+                            onClick={() => handleRowClick(transaction)}
+                          >
+                            <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6">
+                              <div className="space-y-1">
+                                <div className="text-white text-sm lg:text-base">
+                                  {formattedDate}
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  {formattedTime}
+                                </div>
                               </div>
-                              <div className="text-gray-400 text-xs">
-                                {row.date.split(" ")[1]}
+                            </td>
+                            <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                              <div className="text-white text-sm lg:text-base font-medium">
+                                {transaction.tran_type}
                               </div>
-                            </div>
-                          </td>
-                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
-                            <div className="text-white text-sm lg:text-base font-medium">
-                              {row.amount} USDT
-                            </div>
-                          </td>
-                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
-                            <div className="text-white text-sm lg:text-base font-medium">
-                              {row.fee} USDT
-                            </div>
-                          </td>
-                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
-                            <div className="text-white text-sm lg:text-base font-medium">
-                              {row.receive} USDT
-                            </div>
-                          </td>
-                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
-                            <div className="text-white text-sm lg:text-base truncate max-w-[150px]">
-                              {row.withdrawTo}
-                            </div>
-                          </td>
-                          <td className="py-3 lg:py-4 px-3 lg:px-6 text-center">
-                            <StatusBadge status={row.status} />
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                              <div className="text-white text-sm lg:text-base font-medium">
+                                {transaction.in_amount ||
+                                  transaction.out_amount}
+                              </div>
+                            </td>
+                            <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                              <div className="text-white text-sm lg:text-base font-medium">
+                                {transaction.coin_name}
+                              </div>
+                            </td>
+                            <td className="py-3 lg:py-4 px-3 lg:px-6 text-center">
+                              <StatusBadge status={transaction.admin_status} />
+                            </td>
+                            <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                              <div className="text-white text-sm lg:text-base truncate max-w-[200px]">
+                                {transaction.detail}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -375,6 +389,10 @@ export default function HistoryPage() {
                 )}
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="flex justify-center items-center py-8">
+            <div className="text-white text-lg">No transactions found</div>
           </div>
         )}
       </div>

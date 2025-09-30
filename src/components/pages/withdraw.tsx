@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@radix-ui/react-separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useProfileStore } from "@/store/profile";
+import { useWithdrawStore } from "@/store/withdraw";
+import { withdrawService } from "@/services/withdrawService";
 
 import Withdraw from "@/images/icons/withdraw.png";
 import Wallet from "@/images/wallet.png";
@@ -13,43 +15,92 @@ import Wallet from "@/images/wallet.png";
 export default function WithdrawPage() {
   const [walletAddress, setWalletAddress] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [wantDanToken, setWantDanToken] = useState(false);
-  const [danAmount, setDanAmount] = useState("");
+  const [isProcessingWithdraw, setIsProcessingWithdraw] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [withdrawSuccess, setWithdrawSuccess] = useState<{
+    transactionHash: string;
+    amount: number;
+  } | null>(null);
 
-  const accountBalance = "19.70";
-  const pendingWithdrawals = "0.00";
-  const minWithdrawAmount = "1 USDT";
-  const withdrawalFee = "3%";
-  const danExchangeRate = "65.00 DAN/USDT";
+  const { profile, fetchProfile } = useProfileStore();
+  const { balance, fetchBalance, loading: balanceLoading } = useWithdrawStore();
 
-  const handleWithdraw = () => {
-    console.log("Withdraw submitted:", {
-      walletAddress,
-      withdrawAmount,
-      wantDanToken,
-      danAmount,
-    });
-  };
+  // Fetch profile data and set wallet address
+  useEffect(() => {
+    fetchProfile();
+    fetchBalance();
+  }, [fetchProfile, fetchBalance]);
 
-  const handleAmountChange = (value: string) => {
-    setWithdrawAmount(value);
-    if (wantDanToken && value) {
-      const usdtAmount = parseFloat(value);
-      if (!isNaN(usdtAmount)) {
-        setDanAmount((usdtAmount * 65).toString());
-      }
+  // Set wallet address when profile data is loaded
+  useEffect(() => {
+    if (profile.wallet_address) {
+      setWalletAddress(profile.wallet_address);
     }
-  };
+  }, [profile.wallet_address]);
 
-  const handleDanTokenToggle = (checked: boolean) => {
-    setWantDanToken(checked);
-    if (checked && withdrawAmount) {
-      const usdtAmount = parseFloat(withdrawAmount);
-      if (!isNaN(usdtAmount)) {
-        setDanAmount((usdtAmount * 65).toString());
+  const handleWithdraw = async () => {
+    if (!walletAddress || !withdrawAmount) {
+      setWithdrawError("Please fill in all required fields");
+      return;
+    }
+
+    const amount = parseFloat(withdrawAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setWithdrawError("Please enter a valid withdrawal amount");
+      return;
+    }
+
+    if (balance && amount > balance.dan_balance) {
+      setWithdrawError("Insufficient balance for withdrawal");
+      return;
+    }
+
+    setIsProcessingWithdraw(true);
+    setWithdrawError(null);
+    setWithdrawSuccess(null);
+
+    try {
+      console.log("Processing withdrawal:", {
+        amount,
+        walletAddress,
+      });
+
+      const result = await withdrawService.withdrawTokens({
+        amount,
+        wallet_address: walletAddress,
+      });
+
+      if (result.success && result.data) {
+        console.log("✅ Withdrawal successful!");
+        console.log("Transaction Hash:", result.transactionHash);
+        console.log("Block Number:", result.blockNumber);
+
+        setWithdrawSuccess({
+          transactionHash: result.transactionHash || "",
+          amount: amount,
+        });
+
+        // Clear form
+        setWithdrawAmount("");
+
+        // Refresh balance
+        fetchBalance();
+
+        // Clear success message after 10 seconds
+        setTimeout(() => {
+          setWithdrawSuccess(null);
+        }, 10000);
+      } else {
+        console.error("❌ Withdrawal failed:", result.error);
+        setWithdrawError(result.error || "Withdrawal failed");
       }
-    } else {
-      setDanAmount("");
+    } catch (error) {
+      console.error("❌ Error processing withdrawal:", error);
+      setWithdrawError(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    } finally {
+      setIsProcessingWithdraw(false);
     }
   };
 
@@ -71,12 +122,8 @@ export default function WithdrawPage() {
 
         <Separator className="bg-[#989898] h-px mb-3 sm:mb-4 md:mb-5" />
 
-        <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold flex items-baseline gap-2 md:gap-4">
-          Coming Soon
-        </h1>
-
-        {/* <div className="dashboard-gradient rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-12 shadow-2xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-10 mb-4 sm:mb-6 ">
+        <div className="dashboard-gradient rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-12 shadow-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-3 sm:gap-10 mb-4 sm:mb-6 ">
             <div
               className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-center backdrop-blur-sm"
               style={{
@@ -89,10 +136,14 @@ export default function WithdrawPage() {
                 Account Balance
               </h3>
               <p className="text-white text-2xl sm:text-3xl md:text-4xl font-semibold">
-                {accountBalance}
+                {balanceLoading
+                  ? "Loading..."
+                  : balance
+                  ? `${balance.dan_balance.toLocaleString()} DAN`
+                  : "0 DAN"}
               </p>
             </div>
-            <div
+            {/* <div
               className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-center backdrop-blur-sm"
               style={{
                 background: "#9058FE",
@@ -106,32 +157,7 @@ export default function WithdrawPage() {
               <p className="text-white text-2xl sm:text-3xl md:text-4xl font-semibold">
                 {pendingWithdrawals}
               </p>
-            </div>
-          </div>
-
-          <div className="bg-gray-300 rounded-lg overflow-hidden mb-4 sm:mb-6">
-            <div className="grid" style={{ gridTemplateColumns: "2fr 1fr" }}>
-              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
-                <span className="text-black font-medium text-sm sm:text-base">
-                  Minimum withdraw amount
-                </span>
-              </div>
-              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
-                <span className="text-[#555555] text-sm sm:text-base">
-                  {minWithdrawAmount}
-                </span>
-              </div>
-              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
-                <span className="text-black font-medium text-sm sm:text-base">
-                  Withdrawal fee/transaction
-                </span>
-              </div>
-              <div className="p-3 sm:p-4 border-r border-[#434D8A] border-b">
-                <span className="text-[#555555] text-sm sm:text-base">
-                  {withdrawalFee}
-                </span>
-              </div>
-            </div>
+            </div> */}
           </div>
 
           <div className="bg-gray-300 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6">
@@ -150,48 +176,16 @@ export default function WithdrawPage() {
             <div className="space-y-4 sm:space-y-6">
               <div>
                 <label className="block text-gray-800 font-medium mb-2 sm:mb-3 text-sm sm:text-base">
-                  Withdraw to wallet address (USDT on Binance Smart Chain)
+                  Wallet address
                 </label>
                 <Input
+                  disabled={true}
                   type="text"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
-                  placeholder="Withdraw to wallet address (USDT on Binance Smart Chain)"
-                  className="bg-white border-none text-[#A7A7A7] text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
+                  placeholder="Enter wallet address"
+                  className="bg-white border-none text-black text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
                 />
-              </div>
-
-              <div>
-                <label className="block text-gray-800 font-medium mb-2 sm:mb-3 text-sm sm:text-base">
-                  Withdrawal amount (USDT)
-                </label>
-                <Input
-                  type="text"
-                  value={withdrawAmount}
-                  onChange={(e) => handleAmountChange(e.target.value)}
-                  placeholder="Withdrawal amount (USDT)"
-                  className="bg-white border-none text-[#A7A7A7] text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
-                />
-              </div>
-
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="danToken"
-                    checked={wantDanToken}
-                    onCheckedChange={handleDanTokenToggle}
-                    className="w-4 h-4 sm:w-5 sm:h-5 bg-white data-[state=checked]:bg-[#9058FE] data-[state=checked]:border-[#9058FE] border-gray-300"
-                  />
-                  <label
-                    htmlFor="danToken"
-                    className="text-[#D83838] text-base sm:text-lg cursor-pointer"
-                  >
-                    I want to get DAN Token
-                  </label>
-                </div>
-                <p className="text-[#3B3B3B] text-sm sm:text-base md:text-lg ml-6 sm:ml-8">
-                  DAN Token exchange rate {danExchangeRate}
-                </p>
               </div>
 
               <div>
@@ -200,27 +194,58 @@ export default function WithdrawPage() {
                 </label>
                 <Input
                   type="number"
-                  value={danAmount}
-                  onChange={(e) => setDanAmount(e.target.value)}
-                  placeholder="Withdrawal amount (DAN)"
-                  disabled={!wantDanToken}
-                  className="bg-white border-none text-[#A7A7A7] text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  className="bg-white border-none text-black text-sm sm:text-base focus-visible:ring-0 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl h-10 sm:h-12"
                 />
               </div>
 
               <div className="flex justify-end pt-3 sm:pt-4">
                 <Button
                   onClick={handleWithdraw}
-                  disabled={!walletAddress || !withdrawAmount}
+                  disabled={
+                    !walletAddress || !withdrawAmount || isProcessingWithdraw
+                  }
                   size="lg"
-                  className="bg-[#9058FE] text-white py-3 px-6 sm:py-4 sm:px-8 md:py-5 md:px-10 text-sm sm:text-base md:text-lg lg:text-xl font-normal rounded-2xl sm:rounded-3xl border-0 shadow-lg w-full sm:w-auto cursor-pointer h-12 sm:h-14 md:h-16"
+                  className="bg-[#9058FE] text-white py-3 px-6 sm:py-4 sm:px-8 md:py-5 md:px-10 text-sm sm:text-base md:text-lg lg:text-xl font-normal rounded-2xl sm:rounded-3xl border-0 shadow-lg w-full sm:w-auto cursor-pointer h-12 sm:h-14 md:h-16 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Withdraw
+                  {isProcessingWithdraw ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Processing...
+                    </>
+                  ) : (
+                    "Withdraw"
+                  )}
                 </Button>
               </div>
             </div>
           </div>
-        </div> */}
+        </div>
+        {/* Error Display */}
+        {withdrawError && (
+          <div className="max-w-2xl mx-auto mb-4 p-4 bg-red-900/50 rounded-lg border border-red-500">
+            <p className="text-red-200 text-sm text-center">
+              ⚠️ {withdrawError}
+            </p>
+          </div>
+        )}
+
+        {/* Success Display */}
+        {withdrawSuccess && (
+          <div className="max-w-2xl mx-auto mb-4 p-4 bg-green-900/50 rounded-lg border border-green-500">
+            <p className="text-green-200 text-sm text-center">
+              ✅ Withdrawal successful! {withdrawSuccess.amount} DAN sent to
+              withdraw wallet
+              <br />
+              <span className="text-xs opacity-75">
+                Transaction: {withdrawSuccess.transactionHash.substring(0, 10)}
+                ...
+                {withdrawSuccess.transactionHash.substring(-8)}
+              </span>
+            </p>
+          </div>
+        )}
       </div>
     </>
   );

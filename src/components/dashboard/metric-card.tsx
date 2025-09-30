@@ -19,7 +19,7 @@ export function MetricCard({
       className={cn(
         "border-0 shadow-lg rounded-4xl",
         "bg-[#FECA58]",
-        "w-full max-w-[568px] min-h-[30px] sm:min-h-[35px] lg:min-h-[40px] mx-auto lg:mx-0",
+        "w-full",
 
         className
       )}
