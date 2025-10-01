@@ -4,22 +4,10 @@
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { JSX, useState } from "react";
+import { JSX, useState, useEffect } from "react";
 import Direct from "@/images/icons/direct.png";
 import { Separator } from "@radix-ui/react-separator";
-import directConfig from "@/data/direct.json";
-
-interface DirectReferralDataItem {
-  id: number;
-  name: string;
-  email: string;
-  status: "Verified" | "Unverified" | "Pending";
-  registerDate: string;
-}
-
-interface DirectConfig {
-  directData: DirectReferralDataItem[];
-}
+import { useDirectStore, DirectReferralItem } from "@/store/direct";
 
 const Button = ({
   children,
@@ -78,19 +66,21 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-type DirectReferralData = DirectReferralDataItem;
-
-const { directData } = directConfig as DirectConfig;
-
 export default function DirectPage(): JSX.Element {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
-  const totalPages = Math.ceil(directData.length / itemsPerPage);
+  const { referrals, loading, error, fetchDirectReferrals } = useDirectStore();
+
+  useEffect(() => {
+    fetchDirectReferrals();
+  }, [fetchDirectReferrals]);
+
+  const totalPages = Math.ceil(referrals.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = directData.slice(startIndex, endIndex);
+  const currentData = referrals.slice(startIndex, endIndex);
 
   const getPageNumbers = (): number[] => {
     const pages: number[] = [];
@@ -124,13 +114,24 @@ export default function DirectPage(): JSX.Element {
     }
   };
 
-  const handleDetailClick = (row: DirectReferralData): void => {
+  const handleDetailClick = (row: DirectReferralItem): void => {
     console.log("Detail clicked for:", row);
-    router.push(`/direct/${row.id}`);
+    router.push(`/direct/${row.userid}`);
   };
 
-  const handleRowClick = (row: DirectReferralData): void => {
+  const handleRowClick = (row: DirectReferralItem): void => {
     console.log("Row clicked:", row);
+  };
+
+  // Format date from ISO string to display format
+  const formatDate = (dateString: string): { date: string; time: string } => {
+    const date = new Date(dateString);
+    const dateStr = date.toLocaleDateString("en-GB"); // DD/MM/YYYY
+    const timeStr = date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }); // HH:MM
+    return { date: dateStr, time: timeStr };
   };
 
   return (
@@ -153,161 +154,77 @@ export default function DirectPage(): JSX.Element {
 
         <Separator className="bg-[#989898] h-px mb-2 sm:mb-3 md:mb-5" />
 
-        <div className="block lg:hidden space-y-3">
-          {currentData.map((row, index) => (
-            <div
-              key={row.id}
-              className="rounded-xl border border-slate-700/50 backdrop-blur-sm shadow-lg p-4"
-              style={{
-                background: "linear-gradient(180deg, #343967 0%, #263450 100%)",
-              }}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <div className="text-white text-sm font-medium">
-                    {row.name}
-                  </div>
-                  <div className="text-gray-300 text-xs mt-1">{row.email}</div>
-                  <div className="text-gray-300 text-xs">
-                    {row.registerDate.split(" ")[0]}
-                  </div>
-                </div>
-                <StatusBadge status={row.status} />
-              </div>
+        {loading && (
+          <div className="flex justify-center items-center py-8">
+            <div className="text-white text-lg">Loading...</div>
+          </div>
+        )}
 
-              <div className="flex justify-between items-center">
-                <div className="text-gray-300 text-xs">
-                  {row.registerDate.split(" ")[1]}
-                </div>
-                <Button
-                  size="sm"
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.stopPropagation();
-                    handleDetailClick(row);
+        {error && (
+          <div className="flex justify-center items-center py-8">
+            <div className="text-red-400 text-lg">Error: {error}</div>
+          </div>
+        )}
+
+        {!loading && !error && referrals.length === 0 && (
+          <div className="flex justify-center items-center py-8">
+            <div className="text-gray-400 text-lg">
+              No direct referrals found
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && currentData.length > 0 && (
+          <div className="block lg:hidden space-y-3">
+            {currentData.map((row) => {
+              const { date, time } = formatDate(row.register_date);
+              return (
+                <div
+                  key={row.userid}
+                  className="rounded-xl border border-slate-700/50 backdrop-blur-sm shadow-lg p-4"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, #343967 0%, #263450 100%)",
                   }}
-                  className="bg-white !text-[#9058FE] !rounded-full shadow-lg cursor-pointer"
                 >
-                  Transfer fund
-                </Button>
-              </div>
-            </div>
-          ))}
-
-          {totalPages > 1 && (
-            <div
-              className="rounded-xl border border-slate-700/50 backdrop-blur-sm shadow-lg p-4"
-              style={{
-                background: "linear-gradient(180deg, #343967 0%, #263450 100%)",
-              }}
-            >
-              <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
-                {getPageNumbers().map((page) => (
-                  <Button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`w-8 h-8 sm:w-10 sm:h-10 !rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
-                      page === currentPage
-                        ? "!bg-gradient-to-r from-[#9058FE] to-[#563598] !text-white shadow-lg transform scale-105"
-                        : "bg-transparent border-2 border-[#9058FE] !text-gray-300 hover:!text-white"
-                    }`}
-                  >
-                    {page}
-                  </Button>
-                ))}
-
-                {currentPage < totalPages && (
-                  <Button className="w-8 h-8 sm:w-10 sm:h-10 !rounded-full bg-transparent border-2 border-[#9058FE] text-gray-300 hover:bg-gray-500/60 hover:text-white transition-all duration-200 flex items-center justify-center ml-1 cursor-pointer">
-                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="hidden lg:block">
-          <div
-            className="rounded-2xl border border-slate-700/50 backdrop-blur-sm shadow-2xl overflow-hidden"
-            style={{
-              background: "linear-gradient(180deg, #343967 0%, #263450 100%)",
-            }}
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] relative">
-                <thead>
-                  <tr className="relative border-b border-white/20">
-                    <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
-                      No.
-                    </th>
-                    <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
-                      Name
-                    </th>
-                    <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
-                      Email
-                    </th>
-                    <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
-                      Status
-                    </th>
-                    <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
-                      Register Date
-                    </th>
-                    <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
-                      Transfer fund
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {currentData.map((row, index) => (
-                    <tr
-                      key={row.id}
-                      className={`hover:bg-slate-700/20 cursor-pointer transition-colors ${
-                        index < currentData.length - 1
-                          ? "border-b border-white/10"
-                          : ""
-                      }`}
-                      onClick={() => handleRowClick(row)}
-                    >
-                      <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
-                        {row.id}
-                      </td>
-                      <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="text-white text-sm font-medium">
                         {row.name}
-                      </td>
-                      <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
-                        {row.email}
-                      </td>
-                      <td className="py-3 lg:py-4 px-3 lg:px-6 text-center">
-                        <StatusBadge status={row.status} />
-                      </td>
-                      <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
-                        <div className="space-y-1">
-                          <div className="text-white text-sm lg:text-base text-center">
-                            {row.registerDate.split(" ")[0]}{" "}
-                            {row.registerDate.split(" ")[1]}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 lg:py-4 px-3 lg:px-6 text-center">
-                        <Button
-                          size="sm"
-                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                            e.stopPropagation();
-                            handleDetailClick(row);
-                          }}
-                          className="bg-white !text-[#9058FE] !rounded-full shadow-lg cursor-pointer"
-                        >
-                          Transfer fund
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                      <div className="text-gray-300 text-xs mt-1">
+                        {row.email || "No email"}
+                      </div>
+                      <div className="text-gray-300 text-xs">{date}</div>
+                    </div>
+                    <StatusBadge status={row.status} />
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="text-gray-300 text-xs">{time}</div>
+                    <Button
+                      size="sm"
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                        e.stopPropagation();
+                        handleDetailClick(row);
+                      }}
+                      className="bg-white !text-[#9058FE] !rounded-full shadow-lg cursor-pointer"
+                    >
+                      Transfer fund
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
 
             {totalPages > 1 && (
-              <div className="flex flex-col items-center justify-center p-3 lg:p-6 space-y-4 border-t border-slate-700/50">
+              <div
+                className="rounded-xl border border-slate-700/50 backdrop-blur-sm shadow-lg p-4"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #343967 0%, #263450 100%)",
+                }}
+              >
                 <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
                   {getPageNumbers().map((page) => (
                     <Button
@@ -332,7 +249,122 @@ export default function DirectPage(): JSX.Element {
               </div>
             )}
           </div>
-        </div>
+        )}
+
+        {!loading && !error && currentData.length > 0 && (
+          <div className="hidden lg:block">
+            <div
+              className="rounded-2xl border border-slate-700/50 backdrop-blur-sm shadow-2xl overflow-hidden"
+              style={{
+                background: "linear-gradient(180deg, #343967 0%, #263450 100%)",
+              }}
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px] relative">
+                  <thead>
+                    <tr className="relative border-b border-white/20">
+                      <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
+                        No.
+                      </th>
+                      <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
+                        Name
+                      </th>
+                      <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
+                        Email
+                      </th>
+                      <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
+                        Status
+                      </th>
+                      <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
+                        Register Date
+                      </th>
+                      <th className="text-white text-sm lg:text-base xl:text-lg font-medium py-3 lg:py-4 px-3 lg:px-6 text-center">
+                        Transfer fund
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {currentData.map((row, index) => {
+                      const { date, time } = formatDate(row.register_date);
+                      return (
+                        <tr
+                          key={row.userid}
+                          className={`hover:bg-slate-700/20 cursor-pointer transition-colors ${
+                            index < currentData.length - 1
+                              ? "border-b border-white/10"
+                              : ""
+                          }`}
+                          onClick={() => handleRowClick(row)}
+                        >
+                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                            {row.no}
+                          </td>
+                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                            {row.name}
+                          </td>
+                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                            {row.email || "No email"}
+                          </td>
+                          <td className="py-3 lg:py-4 px-3 lg:px-6 text-center">
+                            <StatusBadge status={row.status} />
+                          </td>
+                          <td className="text-white text-sm lg:text-base py-3 lg:py-4 px-3 lg:px-6 text-center">
+                            <div className="space-y-1">
+                              <div className="text-white text-sm lg:text-base text-center">
+                                {date} {time}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 lg:py-4 px-3 lg:px-6 text-center">
+                            <Button
+                              size="sm"
+                              onClick={(
+                                e: React.MouseEvent<HTMLButtonElement>
+                              ) => {
+                                e.stopPropagation();
+                                handleDetailClick(row);
+                              }}
+                              className="bg-white !text-[#9058FE] !rounded-full shadow-lg cursor-pointer"
+                            >
+                              Transfer fund
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center justify-center p-3 lg:p-6 space-y-4 border-t border-slate-700/50">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+                    {getPageNumbers().map((page) => (
+                      <Button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 !rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
+                          page === currentPage
+                            ? "!bg-gradient-to-r from-[#9058FE] to-[#563598] !text-white shadow-lg transform scale-105"
+                            : "bg-transparent border-2 border-[#9058FE] !text-gray-300 hover:!text-white"
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+
+                    {currentPage < totalPages && (
+                      <Button className="w-8 h-8 sm:w-10 sm:h-10 !rounded-full bg-transparent border-2 border-[#9058FE] text-gray-300 hover:bg-gray-500/60 hover:text-white transition-all duration-200 flex items-center justify-center ml-1 cursor-pointer">
+                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

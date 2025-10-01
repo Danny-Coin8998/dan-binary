@@ -62,9 +62,12 @@ const StatusBadge = ({ status }: { status: string }) => {
 const historyOptions: HistoryOption[] = [
   { value: "all", label: "All Transactions" },
   { value: "deposit", label: "Deposits" },
+  { value: "withdraw", label: "Withdrawals" },
+  { value: "referral bonus", label: "Referral Bonus" },
   { value: "invest", label: "Investments" },
-  { value: "apr", label: "APR" },
-  { value: "referral apr", label: "Referral APR" },
+  { value: "apr", label: "APR Earnings" },
+  { value: "pairing", label: "Pairing" },
+  // { value: "referral apr", label: "Referral APR" },
 ];
 
 const getTableHeaders = () => {
