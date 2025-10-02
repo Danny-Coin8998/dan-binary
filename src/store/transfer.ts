@@ -42,19 +42,9 @@ apiClient.interceptors.response.use(
   }
 );
 
-export interface DirectReferralItem {
-  no: number;
-  userid: number;
-  name: string;
-  email: string;
-  status: "VERIFIED" | "UNVERIFIED" | "PENDING";
-  register_date: string;
-  wallet_address?: string;
-}
-
-interface DirectReferralData {
-  referrals: DirectReferralItem[];
-  total_count: number;
+interface TransferData {
+  dan_amount: number;
+  to_wallet_address: string;
 }
 
 interface ApiResponse<T = unknown> {
@@ -63,71 +53,48 @@ interface ApiResponse<T = unknown> {
   error?: string;
 }
 
-interface DirectStore {
+interface TransferStore {
   // State
-  referrals: DirectReferralItem[];
-  totalCount: number;
   loading: boolean;
   error: string | null;
 
   // API Methods
-  getDirectReferrals: () => Promise<ApiResponse<DirectReferralData>>;
+  transferTokens: (
+    data: TransferData
+  ) => Promise<ApiResponse<{ message: string }>>;
 
   // Actions
-  fetchDirectReferrals: () => Promise<void>;
   clearError: () => void;
 }
 
-export const useDirectStore = create<DirectStore>((set, get) => ({
+export const useTransferStore = create<TransferStore>((set, get) => ({
   // Initial state
-  referrals: [],
-  totalCount: 0,
   loading: false,
   error: null,
 
   // API Methods
-  getDirectReferrals: async () => {
+  transferTokens: async (data: TransferData) => {
+    set({ loading: true, error: null });
+
     return apiClient
-      .get("/my-direct-ref")
+      .post("/transfer", data)
       .then((response) => {
-        return { success: true, data: response.data.data || response.data };
+        set({ loading: false, error: null });
+        return { success: true, data: response.data };
       })
       .catch((error) => {
+        const errorMessage =
+          error?.response?.data?.error || "Failed to transfer tokens";
+        set({ loading: false, error: errorMessage });
         return {
           success: false,
-          error:
-            error?.response?.data?.error || "Failed to fetch direct referrals",
+          error: errorMessage,
         };
       });
   },
 
   // Actions
-  fetchDirectReferrals: async () => {
-    set({ loading: true, error: null });
-
-    const result = await get().getDirectReferrals();
-
-    if (!result.success || !result.data) {
-      const errorMessage = result.error || "Failed to fetch direct referrals";
-      set({
-        referrals: [],
-        totalCount: 0,
-        loading: false,
-        error: errorMessage,
-      });
-      return;
-    }
-
-    console.log("Fetched direct referrals:", result.data);
-    set({
-      referrals: result.data.referrals,
-      totalCount: result.data.total_count,
-      loading: false,
-      error: null,
-    });
-  },
-
   clearError: () => set({ error: null }),
 }));
 
-export const useDirect = () => useDirectStore();
+export const useTransfer = () => useTransferStore();

@@ -119,6 +119,18 @@ export default function DirectPage(): JSX.Element {
     router.push(`/direct/${row.userid}`);
   };
 
+  const handleTransferClick = (row: DirectReferralItem): void => {
+    console.log("Transfer clicked for:", row);
+    if (row.wallet_address) {
+      // Navigate to transfer page with wallet address as query parameter
+      router.push(`/transfer?to=${encodeURIComponent(row.wallet_address)}`);
+    } else {
+      // If no wallet address, show alert or navigate to transfer page without pre-filled address
+      // alert("No wallet address available for this user");
+      router.push("/transfer");
+    }
+  };
+
   const handleRowClick = (row: DirectReferralItem): void => {
     console.log("Row clicked:", row);
   };
@@ -206,7 +218,7 @@ export default function DirectPage(): JSX.Element {
                       size="sm"
                       onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                         e.stopPropagation();
-                        handleDetailClick(row);
+                        handleTransferClick(row);
                       }}
                       className="bg-white !text-[#9058FE] !rounded-full shadow-lg cursor-pointer"
                     >
@@ -323,7 +335,7 @@ export default function DirectPage(): JSX.Element {
                                 e: React.MouseEvent<HTMLButtonElement>
                               ) => {
                                 e.stopPropagation();
-                                handleDetailClick(row);
+                                handleTransferClick(row);
                               }}
                               className="bg-white !text-[#9058FE] !rounded-full shadow-lg cursor-pointer"
                             >
