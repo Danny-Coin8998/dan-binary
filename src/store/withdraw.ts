@@ -58,6 +58,28 @@ interface WithdrawData {
   txn_hash: string;
 }
 
+interface PreWithdrawData {
+  dan_amount: number;
+}
+
+interface PreWithdrawResponse {
+  can_withdraw: boolean;
+  attempted: number;
+  limit_24h: number;
+  used_last_24h: number;
+  remaining_allowance: number;
+  projected_total: number;
+  balance: {
+    current: number;
+    after: number;
+    insufficient: boolean;
+    shortfall: number;
+  };
+  cap: {
+    exceeded: boolean;
+  };
+}
+
 interface WithdrawStore {
   // State
   balance: BalanceData | null;
@@ -66,6 +88,9 @@ interface WithdrawStore {
 
   // API Methods
   getBalance: () => Promise<ApiResponse<BalanceData>>;
+  preWithdrawCheck: (
+    data: PreWithdrawData
+  ) => Promise<ApiResponse<PreWithdrawResponse>>;
   submitWithdraw: (
     data: WithdrawData
   ) => Promise<ApiResponse<{ message: string }>>;
@@ -92,6 +117,21 @@ export const useWithdrawStore = create<WithdrawStore>((set, get) => ({
         return {
           success: false,
           error: error?.response?.data?.error || "Failed to fetch balance",
+        };
+      });
+  },
+
+  preWithdrawCheck: async (data: PreWithdrawData) => {
+    return apiClient
+      .post("/withdraw/pre", data)
+      .then((response) => {
+        return { success: true, data: response.data.data || response.data };
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error:
+            error?.response?.data?.error || "Failed to check withdrawal limits",
         };
       });
   },

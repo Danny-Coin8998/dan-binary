@@ -21,9 +21,16 @@ export default function WithdrawPage() {
     transactionHash: string;
     amount: number;
   } | null>(null);
+  const [withdrawWarning, setWithdrawWarning] = useState<string | null>(null);
+  const [isCheckingLimits, setIsCheckingLimits] = useState(false);
 
   const { profile, fetchProfile } = useProfileStore();
-  const { balance, fetchBalance, loading: balanceLoading } = useWithdrawStore();
+  const {
+    balance,
+    fetchBalance,
+    loading: balanceLoading,
+    preWithdrawCheck,
+  } = useWithdrawStore();
 
   // Fetch profile data and set wallet address
   useEffect(() => {
@@ -55,9 +62,61 @@ export default function WithdrawPage() {
       return;
     }
 
-    setIsProcessingWithdraw(true);
+    // Clear previous messages
     setWithdrawError(null);
     setWithdrawSuccess(null);
+    setWithdrawWarning(null);
+
+    // First, check withdrawal limits
+    setIsCheckingLimits(true);
+    try {
+      console.log("Checking withdrawal limits for amount:", amount);
+
+      const preCheckResult = await preWithdrawCheck({ dan_amount: amount });
+
+      if (!preCheckResult.success || !preCheckResult.data) {
+        setWithdrawError(
+          preCheckResult.error || "Failed to check withdrawal limits"
+        );
+        return;
+      }
+
+      const {
+        can_withdraw,
+        attempted,
+        limit_24h,
+        used_last_24h,
+        remaining_allowance,
+        cap,
+      } = preCheckResult.data;
+
+      if (!can_withdraw) {
+        let warningMessage = "Withdrawal not allowed. ";
+
+        if (cap.exceeded) {
+          warningMessage += `Daily withdrawal limit exceeded. You have used ${used_last_24h.toLocaleString()} DAN out of ${limit_24h.toLocaleString()} DAN limit. `;
+          warningMessage += `Remaining allowance: ${remaining_allowance.toLocaleString()} DAN. `;
+          warningMessage += `You attempted to withdraw ${attempted.toLocaleString()} DAN.`;
+        } else {
+          warningMessage += "Please check your withdrawal limits.";
+        }
+
+        setWithdrawWarning(warningMessage);
+        return;
+      }
+
+      // If can_withdraw is true, proceed with the withdrawal
+      console.log("✅ Pre-withdrawal check passed, proceeding with withdrawal");
+    } catch (error) {
+      console.error("❌ Error checking withdrawal limits:", error);
+      setWithdrawError("Failed to check withdrawal limits. Please try again.");
+      return;
+    } finally {
+      setIsCheckingLimits(false);
+    }
+
+    // Proceed with actual withdrawal
+    setIsProcessingWithdraw(true);
 
     try {
       console.log("Processing withdrawal:", {
@@ -204,12 +263,20 @@ export default function WithdrawPage() {
                 <Button
                   onClick={handleWithdraw}
                   disabled={
-                    !walletAddress || !withdrawAmount || isProcessingWithdraw
+                    !walletAddress ||
+                    !withdrawAmount ||
+                    isProcessingWithdraw ||
+                    isCheckingLimits
                   }
                   size="lg"
                   className="bg-[#9058FE] text-white py-3 px-6 sm:py-4 sm:px-8 md:py-5 md:px-10 text-sm sm:text-base md:text-lg lg:text-xl font-normal rounded-2xl sm:rounded-3xl border-0 shadow-lg w-full sm:w-auto cursor-pointer h-12 sm:h-14 md:h-16 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessingWithdraw ? (
+                  {isCheckingLimits ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Checking limits...
+                    </>
+                  ) : isProcessingWithdraw ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
                       Processing...
@@ -227,6 +294,15 @@ export default function WithdrawPage() {
           <div className="max-w-2xl mx-auto mb-4 p-4 bg-red-900/50 rounded-lg border border-red-500">
             <p className="text-red-200 text-sm text-center">
               ⚠️ {withdrawError}
+            </p>
+          </div>
+        )}
+
+        {/* Warning Display */}
+        {withdrawWarning && (
+          <div className="max-w-2xl mx-auto mb-4 p-4 bg-yellow-900/50 rounded-lg border border-yellow-500">
+            <p className="text-yellow-200 text-sm text-center">
+              ⚠️ {withdrawWarning}
             </p>
           </div>
         )}
