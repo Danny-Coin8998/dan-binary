@@ -10,7 +10,7 @@ import { useTransferStore } from "@/store/transfer";
 import { useWithdrawStore } from "@/store/withdraw";
 import { useSearchParams } from "next/navigation";
 
-import Transfer from "@/images/icons/direct.png";
+import MoneyIcon from "@/images/icons/money.png";
 import Wallet from "@/images/wallet.png";
 
 export default function TransferPage() {
@@ -128,7 +128,7 @@ export default function TransferPage() {
           <h1 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold flex items-center gap-2 sm:gap-3 md:gap-4">
             Transfer DAN
             <Image
-              src={Transfer}
+              src={MoneyIcon}
               alt="transfer"
               width={18}
               height={18}

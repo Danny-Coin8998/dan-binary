@@ -17,11 +17,13 @@ import LinkingIcon from "@/images/icons/link.png";
 import TeamIcon from "@/images/icons/team.png";
 import HistoryIcon from "@/images/icons/history.png";
 import SettingIcon from "@/images/icons/setting.png";
+import MoneyIcon from "@/images/icons/money.png";
 
 const sidebarItems = [
   { icon: DashboardIcon, label: "Dashboard", href: "/" },
   { icon: DepositIcon, label: "Make a deposit", href: "/deposit" },
   { icon: PackageIcon, label: "Buy a package", href: "/package" },
+  { icon: MoneyIcon, label: "Transfer fund", href: "/transfer" },
   { icon: InvestmentIcon, label: "My Investment", href: "/investment" },
   { icon: WithdrawIcon, label: "Withdraw fund", href: "/withdraw" },
   { icon: LinkingIcon, label: "Referral Link", href: "/referral" },
